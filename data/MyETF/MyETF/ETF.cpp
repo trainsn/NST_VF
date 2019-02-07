@@ -2,6 +2,8 @@
 # define M_PI 3.14159265358979323846
 
 using namespace cv;
+const float eps = 1e-10;
+const float PI = 3.1415926;
 
 
 ETF::ETF() {
@@ -69,6 +71,21 @@ void ETF::refine_ETF(int kernel) {
 	flowField = refinedETF.clone();
 }
 
+// add by trainsn
+void ETF::getAngle() {
+#pragma omp parallel for
+	for (int r = 0; r < flowField.rows; r++) {
+		for (int c = 0; c < flowField.cols; c++) {
+			const Vec3f t_cur_y = flowField.at<Vec3f>(r, c);
+			float angle = 0;
+			if (t_cur_y.val[1] > eps) 
+				angle = atan(t_cur_y.val[0] / t_cur_y.val[1]);
+			angles[r][c] = angle * 180 / PI;
+		}
+	}
+}
+
+
 /*
  * Paper's Eq(1)
  */
@@ -90,6 +107,7 @@ void ETF::computeNewVector(int x, int y, const int kernel) {
 	}
 	refinedETF.at<Vec3f>(y, x) = normalize(t_new);
 }
+
 
 /*
  * Paper's Eq(5)
