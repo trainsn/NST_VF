@@ -15,14 +15,14 @@ int main(int argc, char *argv[]) {
 	argc--;
 	argv++;
 	if (argc < 1) {
-		fprintf(stderr, "main img_name.txt\n"); exit(1);
+		fprintf(stderr, "main rootDir\n"); exit(1);
 	}
 
 	string rootDir = argv[0];
-	string fname = rootDir + "/img_names.txt";
-	string inputDir = rootDir + "/train_gray/";
-	string outputDir = rootDir + "/vector_fields/";
-	string licDir = rootDir + "/lic/";
+	string fname = rootDir + "\\img_names.txt";
+	string inputDir = rootDir + "\\train_gray\\";
+	string outputDir = rootDir + "\\vector_fields\\";
+	string licDir = rootDir + "\\lic\\";
 
 	FILE* fp = fopen(fname.c_str(), "r");
 	char name[260];

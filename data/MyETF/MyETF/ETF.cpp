@@ -81,6 +81,9 @@ void ETF::getAngle() {
 			if (t_cur_y.val[1] > eps) 
 				angle = atan(t_cur_y.val[0] / t_cur_y.val[1]);
 			angles[r][c] = angle * 180 / PI;
+			//float rr = r - img_size/2;
+			//float cc = c - img_size/2;
+			//flowField.at<Vec3f>(r, c) = normalize(Vec3f(cc, -rr, 0));
 		}
 	}
 }

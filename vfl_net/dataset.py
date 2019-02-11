@@ -1,9 +1,10 @@
 from torch.utils.data import Dataset
 
 from PIL import Image
-
+import numpy as np
 import os
 import h5py
+import pdb
 
 def img_loader(path):
     img = Image.open(path).convert('L')
@@ -35,10 +36,11 @@ class VFDataset(Dataset):
         inputDir = os.path.join(self.root, "train_gray")
         vfDir = os.path.join(self.root, "vector_fields")
 
-        fn = self.imgs[index]
+        fn = self.imgs[index].strip("\r\n")
         vf_fn = fn[:fn.rfind('.')] + '.h5'
         img = self.loader(os.path.join(inputDir, fn))
         vector_field = self.target_loader(os.path.join(vfDir, vf_fn))
+        vector_field = vector_field[:, :, np.newaxis]
 
         if self.transform is not None:
             img = self.transform(img)
