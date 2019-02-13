@@ -88,9 +88,14 @@ def gray_bgr_batch(batch):
     return gray
 
 def clamp_batch(batch, low, high):
-    batch[:, 0, :, :].data.clamp_(low, high)
-    batch[:, 1, :, :].data.clamp_(low, high)
-    batch[:, 2, :, :].data.clamp_(low, high)
+    batch[:,0,:,:].data.clamp_(low, high)
+    batch[:,1,:,:].data.clamp_(low, high)
+    batch[:,2,:,:].data.clamp_(low, high)
+
+def imagenet_clamp_batch(batch, low, high):
+    batch[:,0,:,:].data.clamp_(low-103.939, high-103.939)
+    batch[:,1,:,:].data.clamp_(low-116.779, high-116.779)
+    batch[:,2,:,:].data.clamp_(low-123.680, high-123.680)
 
 def preprocess_batch(batch):
     batch = batch.transpose(0, 1)
