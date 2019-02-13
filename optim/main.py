@@ -17,7 +17,7 @@ def optimize(args):
     style_image = utils.tensor_load_rgbimage(args.style_image, size=args.style_size)
     style_image = style_image.unsqueeze(0)
     style_image = Variable(utils.preprocess_batch(style_image), requires_grad=False)
-    style_image = utils.subtract_imagenet_mean_batch(style_image)
+    # style_image = utils.subtract_imagenet_mean_batch(style_image)
 
     # generate the vector field that we want to stylize
     eps = 1e-7
@@ -26,17 +26,17 @@ def optimize(args):
     angles = np.zeros((size, size), dtype=np.float32)
     for y in range(size):
         for x in range(size):
-            # xx = float(x - size / 2)
-            # yy = float(y - size / 2)
-            # rsq = xx ** 2 + yy ** 2
-            # if (rsq == 0):
-            #     vectors[y, x, 0] = 0
-            #     vectors[y, x, 1] = 0
-            # else:
-            #     vectors[y, x, 0] = -yy / rsq
-            #     vectors[y, x, 1] = xx / rsq
-            #     angles[y, x] = math.atan(vectors[y, x, 1] / vectors[y, x, 0]) * 180 / math.pi
-            angles[y, x] = 45
+            xx = float(x - size / 2)
+            yy = float(y - size / 2)
+            rsq = xx ** 2 + yy ** 2
+            if (rsq == 0):
+                vectors[y, x, 0] = 0
+                vectors[y, x, 1] = 0
+            else:
+                vectors[y, x, 0] = -yy / rsq
+                vectors[y, x, 1] = xx / rsq
+                angles[y, x] = math.atan(vectors[y, x, 1] / vectors[y, x, 0]) * 180 / math.pi
+            # angles[y, x] = 45
     angles = utils.tensor_load_vector_field(angles)
     angles = angles.unsqueeze(0)
     angles = Variable(angles, requires_grad=False)
@@ -63,7 +63,7 @@ def optimize(args):
     output_size = np.asarray(angles_size)
     output_size[1] = 3
     output_size = torch.Size(output_size)
-    output = Variable(torch.randn(output_size, device="cuda"), requires_grad=True)
+    output = Variable(torch.randn(output_size, device="cuda") + 127 , requires_grad=True)
     optimizer = Adam([output], lr=args.lr)
     mse_loss = torch.nn.MSELoss()
     # optimize the images
@@ -83,7 +83,10 @@ def optimize(args):
         #     gram_s = Variable(gram_style[m].data, requires_grad=False)
         #     style_loss += args.style_weight * mse_loss(gram_y, gram_s)
 
+        # total_loss = content_loss + style_loss
         total_loss = content_loss
+        # if ((e+1) % 50 == 0):
+        #     print("iter: %d content_loss: %f style_loss %f" % (e, content_loss.item(), style_loss.item()))
         total_loss.backward()
         optimizer.step()
         tbar.set_description(str(total_loss.data.cpu().numpy().item()))

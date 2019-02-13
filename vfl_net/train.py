@@ -9,6 +9,7 @@ from torch.optim import Adam
 from torch.utils.data import DataLoader
 from torchvision import transforms
 
+import utils
 from dataset import VFDataset
 from transformer_net import TransformerNet
 
@@ -58,6 +59,7 @@ def train(args):
             count += n_batch
             optimizer.zero_grad()
 
+            x = utils.subtract_imagenet_mean_batch(x)
             x = x.to(device)
             y = transformer(x)
             vf = vf.to(device)

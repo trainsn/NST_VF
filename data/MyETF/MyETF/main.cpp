@@ -39,7 +39,7 @@ int main(int argc, char *argv[]) {
 		originalImg = imread(file, CV_LOAD_IMAGE_GRAYSCALE);
 		etf.initial_ETF(file, originalImg.size());
 		int ETF_kernel = 7;
-		int times = 0;
+		int times = 3;
 		for (int i = 0; i < times; i++) {
 			etf.refine_ETF(ETF_kernel);
 		}

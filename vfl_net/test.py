@@ -12,6 +12,7 @@ import math
 import torch
 from torchvision import transforms
 
+import utils
 from transformer_net import TransformerNet
 import dataset
 import lic_internal
@@ -36,6 +37,7 @@ def lic(angles, output_name):
     kernel = kernel.astype(np.float32)
     texture = np.random.rand(rsize, csize).astype(np.float32)
 
+    pdb.set_trace()
     image = lic_internal.line_integral_convolution(vectors, texture, kernel)
     scipy.misc.imsave(output_name, image)
 
@@ -43,13 +45,15 @@ def lic(angles, output_name):
 def vectorize(args):
     device = torch.device("cuda" if args.cuda else "cpu")
 
-    content_image = Image.open(args.content_image)
+    content_image = Image.open(args.content_image).convert('L')
     content_transform = transforms.Compose([
         transforms.ToTensor(),
         transforms.Lambda(lambda x: x.mul(255))
     ])
     content_image = content_transform(content_image)
-    content_image = content_image.unsqueeze(0).to(device)
+    content_image = content_image.unsqueeze(0)
+    content_image = utils.subtract_imagenet_mean_batch(content_image)
+    content_image = content_image.to(device)
 
     with torch.no_grad():
         vectorize_model = TransformerNet()
@@ -63,30 +67,31 @@ def vectorize(args):
         vectorize_model.to(device)
         output = vectorize_model(content_image)
 
-    target = dataset.hdf5_loader(args.target_vector)
-    target = target[:, :, np.newaxis]
-    target_transform = transforms.ToTensor()
-    target = target_transform(target)
-    target = target.unsqueeze(0).to(device)
+    # target = dataset.hdf5_loader(args.target_vector)
+    # target = target[:, :, np.newaxis]
+    # target_transform = transforms.ToTensor()
+    # target = target_transform(target)
+    # target = target.unsqueeze(0).to(device)
+    #
+    # mse_loss = torch.nn.MSELoss()
+    # loss = mse_loss(output, target)
+    # print(loss.item())
 
-    mse_loss = torch.nn.MSELoss()
-    loss = mse_loss(output, target)
-    print(loss.item())
-
+    pdb.set_trace()
     output = output.cpu().clone().clamp(-90, 90).numpy()[0, 0]
     lic(output, "output.jpg")
-    target = target.cpu().clone().clamp(-90, 90).numpy()[0, 0]
-    lic(target, "target.jpg")
+    # target = target.cpu().clone().clamp(-90, 90).numpy()[0, 0]
+    # lic(target, "target.jpg")
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--content-image", type=str, default="../datasets/train_gray/COCO_train2014_000000000009.jpg",
+    parser.add_argument("--content-image", type=str, default="../datasets/fake/train_gray/cat_test1.jpg",
                         help="path to the original image")
     parser.add_argument("--size", type=int, default=512,
                         help="size the the image and vector field")
-    parser.add_argument("--target-vector", type=str, default="../datasets/vector_fields/COCO_train2014_000000000009.h5",
+    parser.add_argument("--target-vector", type=str, default="../datasets/fake/vector_fields/vectorline.h5",
                         help="path to the target vector field")
-    parser.add_argument("--saved-model", type=str, default="../save_models/epoch_100.model",
+    parser.add_argument("--saved-model", type=str, default="../save_models/epoch_5.model",
                         help="saved model to be used for vectorize the image. ")
     parser.add_argument("--cuda", type=int, default=1,
                         help="set it to 1 for running on GPU, 0 for CPU")
