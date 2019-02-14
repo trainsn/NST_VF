@@ -85,7 +85,7 @@ def optimize(args):
 
         # total_loss = content_loss + style_loss
         total_loss = content_loss
-        # if ((e+1) % 50 == 0):
+        # if ((e+1) % args.log_interval == 0):
         #     print("iter: %d content_loss: %f style_loss %f" % (e, content_loss.item(), style_loss.item()))
         total_loss.backward()
         optimizer.step()
