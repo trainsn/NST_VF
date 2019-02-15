@@ -88,6 +88,17 @@ void ETF::getAngle() {
 	}
 }
 
+void ETF::getVector() {
+#pragma omp parallel for
+	for (int r = 0; r < flowField.rows; r++) {
+		for (int c = 0; c < flowField.cols; c++) {
+			const Vec3f t_cur_y = flowField.at<Vec3f>(r, c);
+			vectors[r][c][0] = t_cur_y.val[1];
+			vectors[r][c][1] = t_cur_y.val[0];
+		}
+	}
+}
+
 
 /*
  * Paper's Eq(1)

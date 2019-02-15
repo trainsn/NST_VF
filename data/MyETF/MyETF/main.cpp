@@ -5,6 +5,7 @@
 #define DATASET         "vector_field"
 #define DIM0            512
 #define DIM1            512
+#define DIM2			2
 
 using namespace cv;
 
@@ -19,10 +20,10 @@ int main(int argc, char *argv[]) {
 	}
 
 	string rootDir = argv[0];
-	string fname = rootDir + "\\img_names.txt";
-	string inputDir = rootDir + "\\train_gray\\";
-	string outputDir = rootDir + "\\vector_fields\\";
-	string licDir = rootDir + "\\lic\\";
+	string fname = rootDir + "/img_names.txt";
+	string inputDir = rootDir + "/train_gray/";
+	string outputDir = rootDir + "/vector_fields/";
+	string licDir = rootDir + "/lic/";
 
 	FILE* fp = fopen(fname.c_str(), "r");
 	char name[260];
@@ -43,11 +44,12 @@ int main(int argc, char *argv[]) {
 		for (int i = 0; i < times; i++) {
 			etf.refine_ETF(ETF_kernel);
 		}
-		etf.getAngle();
+		//etf.getAngle();
+		etf.getVector();
 
 		hid_t       hdf5_file, space, dset;          /* Handles */
 		herr_t      status;
-		hsize_t     dims[2] = { DIM0, DIM1 };
+		hsize_t     dims[3] = { DIM0, DIM1, DIM2 };
 
 		/*
 		* Create a new file using the default properties.
@@ -58,7 +60,7 @@ int main(int argc, char *argv[]) {
 		* Create dataspace.  Setting maximum size to NULL sets the maximum
 		* size to be the current size.
 		*/
-		space = H5Screate_simple(2, dims, NULL);
+		space = H5Screate_simple(3, dims, NULL);
 
 		/*
 		* Create the dataset.  We will use all default properties for this
@@ -71,7 +73,7 @@ int main(int argc, char *argv[]) {
 		* Write the data to the dataset.
 		*/
 		status = H5Dwrite(dset, H5T_NATIVE_FLOAT, H5S_ALL, H5S_ALL, H5P_DEFAULT,
-			etf.angles);
+			etf.vectors);
 
 		/*
 		* Close and release resources.
