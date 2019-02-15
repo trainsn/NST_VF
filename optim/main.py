@@ -24,39 +24,39 @@ def optimize(args):
     vectors = np.zeros((size, size, 2), dtype=np.float32)
     angles = np.zeros((size, size), dtype=np.float32)
 
-    vortex_spacing = 0.5
-    extra_factor = 2.
-
-    a = np.array([1, 0]) * vortex_spacing
-    b = np.array([np.cos(np.pi / 3), np.sin(np.pi / 3)]) * vortex_spacing
-    rnv = int(2 * extra_factor / vortex_spacing)
-    vortices = [n * a + m * b for n in range(-rnv, rnv) for m in range(-rnv, rnv)]
-    vortices = [(x, y) for (x, y) in vortices if -extra_factor < x < extra_factor and -extra_factor < y < extra_factor]
-
-    xs = np.linspace(-1, 1, size).astype(np.float32)[None, :]
-    ys = np.linspace(-1, 1, size).astype(np.float32)[:, None]
-
-    for (x, y) in vortices:
-        rsq = (xs - x) ** 2 + (ys - y) ** 2
-        vectors[..., 0] += (ys - y) / rsq
-        vectors[..., 1] += -(xs - x) / rsq
+    # vortex_spacing = 0.5
+    # extra_factor = 2.
+    #
+    # a = np.array([1, 0]) * vortex_spacing
+    # b = np.array([np.cos(np.pi / 3), np.sin(np.pi / 3)]) * vortex_spacing
+    # rnv = int(2 * extra_factor / vortex_spacing)
+    # vortices = [n * a + m * b for n in range(-rnv, rnv) for m in range(-rnv, rnv)]
+    # vortices = [(x, y) for (x, y) in vortices if -extra_factor < x < extra_factor and -extra_factor < y < extra_factor]
+    #
+    # xs = np.linspace(-1, 1, size).astype(np.float32)[None, :]
+    # ys = np.linspace(-1, 1, size).astype(np.float32)[:, None]
+    #
+    # for (x, y) in vortices:
+    #     rsq = (xs - x) ** 2 + (ys - y) ** 2
+    #     vectors[..., 0] += (ys - y) / rsq
+    #     vectors[..., 1] += -(xs - x) / rsq
+    #
+    # for y in range(size):
+    #     for x in range(size):
+    #         angles[y, x] = math.atan(vectors[y, x, 1] / vectors[y, x, 0]) * 180 / math.pi
 
     for y in range(size):
         for x in range(size):
-            angles[y, x] = math.atan(vectors[y, x, 1] / vectors[y, x, 0]) * 180 / math.pi
-
-    # for y in range(size):
-    #     for x in range(size):
-    #         xx = float(x - size / 2)
-    #         yy = float(y - size / 2)
-    #         rsq = xx ** 2 + yy ** 2
-    #         if (rsq == 0):
-    #             vectors[y, x, 0] = 0
-    #             vectors[y, x, 1] = 0
-    #         else:
-    #             vectors[y, x, 0] = -yy / rsq
-    #             vectors[y, x, 1] = xx / rsq
-    #             angles[y, x] = math.atan(vectors[y, x, 1] / vectors[y, x, 0]) * 180 / math.pi
+            xx = float(x - size / 2)
+            yy = float(y - size / 2)
+            rsq = xx ** 2 + yy ** 2
+            if (rsq == 0):
+                vectors[y, x, 0] = 0
+                vectors[y, x, 1] = 0
+            else:
+                vectors[y, x, 0] = -yy / rsq
+                vectors[y, x, 1] = xx / rsq
+                angles[y, x] = math.atan(vectors[y, x, 1] / vectors[y, x, 0]) * 180 / math.pi
             # angles[y, x] = 45
     angles = utils.tensor_load_vector_field(angles)
     angles = angles.unsqueeze(0)

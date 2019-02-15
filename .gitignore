@@ -336,3 +336,4 @@ data/hdf5
 vfl_net/venv
 test_sobel/venv
 .idea
+*.pptx
