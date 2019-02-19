@@ -4,6 +4,7 @@ import math
 from tqdm import tqdm, trange
 import argparse
 import pdb
+import h5py
 
 import torch
 from torch.optim import Adam
@@ -12,6 +13,7 @@ from torch.autograd import Variable
 import utils
 from net import Vgg16
 from transformer_net import TransformerNet
+
 
 def optimize(args):
     style_image = utils.tensor_load_rgbimage(args.style_image, size=args.style_size)
@@ -44,19 +46,20 @@ def optimize(args):
     #     for x in range(size):
     #         angles[y, x] = math.atan(vectors[y, x, 1] / vectors[y, x, 0]) * 180 / math.pi
 
-    for y in range(size):
-        for x in range(size):
-            xx = float(x - size / 2)
-            yy = float(y - size / 2)
-            rsq = xx ** 2 + yy ** 2
-            if (rsq == 0):
-                vectors[y, x, 0] = 0
-                vectors[y, x, 1] = 0
-            else:
-                vectors[y, x, 0] = -yy / rsq
-                vectors[y, x, 1] = xx / rsq
-                # angles[y, x] = math.atan(vectors[y, x, 1] / vectors[y, x, 0]) * 180 / math.pi
-            # angles[y, x] = 45
+    # for y in range(size):
+    #     for x in range(size):
+    #         xx = float(x - size / 2)
+    #         yy = float(y - size / 2)
+    #         rsq = xx ** 2 + yy ** 2
+    #         if (rsq == 0):
+    #             vectors[y, x, 0] = 0
+    #             vectors[y, x, 1] = 0
+    #         else:
+    #             vectors[y, x, 0] = -yy / rsq
+    #             vectors[y, x, 1] = xx / rsq
+    f = h5py.File("../datasets/fake/vector_fields/cat_test3.h5", 'r')
+    a_group_key = list(f.keys())[0]
+    vectors = f[a_group_key][:]
     vectors = utils.tensor_load_vector_field(vectors)
     vectors = Variable(vectors, requires_grad=False)
 
@@ -99,24 +102,25 @@ def optimize(args):
         transformer_y = transformer(transformer_input)
         content_loss = args.content_weight * cosine_loss(vectors, transformer_y, label)
 
-        vgg_input = output
-        features_y = vgg(vgg_input)
-        style_loss = 0
-        for m in range(len(features_y)):
-            gram_y = utils.gram_matrix(features_y[m])
-            gram_s = Variable(gram_style[m].data, requires_grad=False)
-            style_loss += args.style_weight * mse_loss(gram_y, gram_s)
+        # vgg_input = output
+        # features_y = vgg(vgg_input)
+        # style_loss = 0
+        # for m in range(len(features_y)):
+        #     gram_y = utils.gram_matrix(features_y[m])
+        #     gram_s = Variable(gram_style[m].data, requires_grad=False)
+        #     style_loss += args.style_weight * mse_loss(gram_y, gram_s)
 
-        total_loss = content_loss + style_loss
-        # total_loss = content_loss
-        if ((e+1) % args.log_interval == 0):
-            print("iter: %d content_loss: %f style_loss %f" % (e, content_loss.item(), style_loss.item()))
+        # total_loss = content_loss + style_loss
+        total_loss = content_loss
         total_loss.backward()
         optimizer.step()
         tbar.set_description(str(total_loss.data.cpu().numpy().item()))
+        # if ((e+1) % args.log_interval == 0):
+        #     print("iter: %d content_loss: %f style_loss %f" % (e, content_loss.item(), style_loss.item()))
+
     # save the image
     output = utils.add_imagenet_mean_batch_device(output, args.cuda)
-    utils.tensor_save_bgrimage(output.data[0], args.output_image, args.cuda)
+    utils.tensor_save_bgrimage(output.data[0], "output_iter_" + str(e + 1) + ".jpg", args.cuda)
 
 def main():
     parser = argparse.ArgumentParser()
@@ -130,13 +134,13 @@ def main():
                         help="size of style image, default is the original size of style image")
     parser.add_argument("--output-image", type=str, default="output.jpg",
                         help="path for saving the output image")
-    parser.add_argument("--transformer-model-path", type=str,default="../save_models/epoch_5.model",
+    parser.add_argument("--transformer-model-path", type=str,default="../save_models/ckpt_epoch_0_batch_id_400.pth",
                         help="path for transformer net, trained before")
     parser.add_argument("--vgg-model-dir", type=str, default="models/",
                         help="directory for vgg, if model is not present in the directory it is downloaded")
     parser.add_argument("--cuda", type=int, default=1,
                         help="set it to 1 for running on GPU, 0 for CPU")
-    parser.add_argument("--content-weight", type=float, default=1,
+    parser.add_argument("--content-weight", type=float, default=1e6,
                         help="weight for content-loss, default is 3.0")
     parser.add_argument("--style-weight", type=float, default=5,
                         help="weight for style-loss, default is 5.0")

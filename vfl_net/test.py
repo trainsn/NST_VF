@@ -13,7 +13,7 @@ import torch
 from torchvision import transforms
 
 import utils
-from transformer_net import TransformerNet, CosineLoss
+from transformer_net import TransformerNet
 import dataset
 import lic_internal
 
@@ -42,38 +42,37 @@ def vectorize(args):
     content_image = utils.subtract_imagenet_mean_batch(content_image)
     content_image = content_image.to(device)
 
-    # with torch.no_grad():
-    #     vectorize_model = TransformerNet()
-    #     state_dict = torch.load(args.saved_model)
-    #     # remove saved deprecated running_* keys in InstanceNorm from the checkpoint
-    #     for k in list(state_dict.keys()):
-    #         if re.search(r'in\d+\.running_(mean|var)$', k):
-    #             pdb.set_trace()
-    #             del state_dict[k]
-    #     vectorize_model.load_state_dict(state_dict)
-    #     vectorize_model.to(device)
-    #     output = vectorize_model(content_image)
+    with torch.no_grad():
+        vectorize_model = TransformerNet()
+        state_dict = torch.load(args.saved_model)
+        # remove saved deprecated running_* keys in InstanceNorm from the checkpoint
+        for k in list(state_dict.keys()):
+            if re.search(r'in\d+\.running_(mean|var)$', k):
+                pdb.set_trace()
+                del state_dict[k]
+        vectorize_model.load_state_dict(state_dict)
+        vectorize_model.to(device)
+        output = vectorize_model(content_image)
 
     target = dataset.hdf5_loader(args.target_vector)
     target_transform = transforms.ToTensor()
     target = target_transform(target)
     target = target.unsqueeze(0).to(device)
 
-    # mse_loss = torch.nn.MSELoss()
-    cosine_loss = CosineLoss()
-    # loss = mse_loss(output, target)
-    # loss = cosine_loss(output, target)
-    # print(loss.item())
+    cosine_loss = torch.nn.CosineEmbeddingLoss()
+    label = torch.ones(1, 1, args.size, args.size).to(device)
+    loss = cosine_loss(output, target, label)
+    print(loss.item())
 
     pdb.set_trace()
-    # output = output.cpu().clone().clamp(-90, 90).numpy()[0]
-    # lic(output, "output.jpg")
+    output = output.cpu().clone().numpy()[0].transpose(1, 2, 0)
+    lic(output, "output.jpg")
     target = target.cpu().clone().numpy()[0].transpose(1, 2, 0)
     lic(target, "target.jpg")
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--content-image", type=str, default="../datasets/fake/train_gray/cat_test1.jpg",
+    parser.add_argument("--content-image", type=str, default="../datasets/train_gray/COCO_train2014_000000035427.jpg",
                         help="path to the original image")
     parser.add_argument("--size", type=int, default=512,
                         help="size the the image and vector field")
