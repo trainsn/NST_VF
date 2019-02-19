@@ -4,6 +4,20 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.autograd import Variable
 
+class CosineLoss(torch.nn.Module):
+    def __init__(self, reduce=True):
+        super(CosineLoss, self).__init__()
+        self.reduce = reduce
+
+    def forward(self, target, output):
+        target_norm = target / torch.sqrt(torch.pow(target, 2).sum(1))
+        output_norm = output / torch.sqrt(torch.pow(output, 2).sum(1))
+        dot = 1 - target_norm.mul(output_norm).sum(1)
+        if self.reduce:
+            return dot.mean()
+        else:
+            return dot.sum()
+
 class Vgg16(torch.nn.Module):
     def __init__(self):
         super(Vgg16, self).__init__()

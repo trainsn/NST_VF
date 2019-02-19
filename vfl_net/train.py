@@ -11,7 +11,7 @@ from torchvision import transforms
 
 import utils
 from dataset import VFDataset
-from transformer_net import TransformerNet
+from transformer_net import TransformerNet, CosineLoss
 
 import pdb
 
@@ -46,7 +46,8 @@ def train(args):
     if args.load_model is not None:
         transformer.load_state_dict(torch.load(args.load_model))
     optimizer = Adam(transformer.parameters(), args.lr)
-    mse_loss = torch.nn.MSELoss()
+    # mse_loss = torch.nn.MSELoss()
+    cosine_loss = CosineLoss()
 
     # log_file = open(args.log_file, "w")
 
@@ -64,7 +65,8 @@ def train(args):
             y = transformer(x)
             vf = vf.to(device)
 
-            loss = mse_loss(y, vf)
+            # loss = mse_loss(y, vf)
+            loss = cosine_loss(y, vf)
             loss.backward()
             optimizer.step()
 

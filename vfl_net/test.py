@@ -13,20 +13,15 @@ import torch
 from torchvision import transforms
 
 import utils
-from transformer_net import TransformerNet
+from transformer_net import TransformerNet, CosineLoss
 import dataset
 import lic_internal
 
-def lic(angles, output_name):
-    angles = angles * math.pi / 180
-    rsize, csize = angles.shape
+def lic(vectors, output_name):
+    rsize, csize, _ = vectors.shape
     eps = 1e-7
-    vectors = np.zeros((rsize, csize, 2), dtype=np.float32)
-
     for x in range(rsize):
         for y in range(csize):
-            vectors[x, y, 0] = math.cos(angles[x, y])
-            vectors[x, y, 1] = math.sin(angles[x, y])
             if vectors[x, y, 0] == 0:
                 vectors[x, y, 0] = eps
             if vectors[x, y, 1] == 0:
@@ -37,7 +32,6 @@ def lic(angles, output_name):
     kernel = kernel.astype(np.float32)
     texture = np.random.rand(rsize, csize).astype(np.float32)
 
-    pdb.set_trace()
     image = lic_internal.line_integral_convolution(vectors, texture, kernel)
     scipy.misc.imsave(output_name, image)
 
@@ -67,20 +61,21 @@ def vectorize(args):
         vectorize_model.to(device)
         output = vectorize_model(content_image)
 
-    # target = dataset.hdf5_loader(args.target_vector)
-    # target = target[:, :, np.newaxis]
-    # target_transform = transforms.ToTensor()
-    # target = target_transform(target)
-    # target = target.unsqueeze(0).to(device)
-    #
+    target = dataset.hdf5_loader(args.target_vector)
+    target_transform = transforms.ToTensor()
+    target = target_transform(target)
+    target = target.unsqueeze(0).to(device)
+
     # mse_loss = torch.nn.MSELoss()
+    cosine_loss = CosineLoss()
     # loss = mse_loss(output, target)
-    # print(loss.item())
+    loss = cosine_loss(output, target)
+    print(loss.item())
 
     pdb.set_trace()
-    output = output.cpu().clone().clamp(-90, 90).numpy()[0, 0]
+    output = output.cpu().clone().clamp(-90, 90).numpy()[0]
     lic(output, "output.jpg")
-    # target = target.cpu().clone().clamp(-90, 90).numpy()[0, 0]
+    # target = target.cpu().clone().clamp(-90, 90).numpy()[0]
     # lic(target, "target.jpg")
 
 def main():

@@ -56,7 +56,7 @@ def optimize(args):
             else:
                 vectors[y, x, 0] = -yy / rsq
                 vectors[y, x, 1] = xx / rsq
-                angles[y, x] = math.atan(vectors[y, x, 1] / vectors[y, x, 0]) * 180 / math.pi
+                # angles[y, x] = math.atan(vectors[y, x, 1] / vectors[y, x, 0]) * 180 / math.pi
             # angles[y, x] = 45
     angles = utils.tensor_load_vector_field(angles)
     angles = angles.unsqueeze(0)

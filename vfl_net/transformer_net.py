@@ -21,7 +21,7 @@ class TransformerNet(torch.nn.Module):
         self.in4 = torch.nn.InstanceNorm2d(64, affine=True)
         self.deconv2 = UpsampleConvLayer(64, 32, kernel_size=3, stride=1, upsample=2)
         self.in5 = torch.nn.InstanceNorm2d(32, affine=True)
-        self.deconv3 = ConvLayer(32, 1, kernel_size=9, stride=1)
+        self.deconv3 = ConvLayer(32, 2, kernel_size=9, stride=1)
         # Non-linearities
         self.relu = torch.nn.ReLU()
 
@@ -96,3 +96,17 @@ class UpsampleConvLayer(torch.nn.Module):
         out = self.reflection_pad(x_in)
         out = self.conv2d(out)
         return out
+
+class CosineLoss(torch.nn.Module):
+    def __init__(self, reduce=True):
+        super(CosineLoss, self).__init__()
+        self.reduce = reduce
+
+    def forward(self, target, output):
+        target_norm = target / torch.sqrt(torch.pow(target, 2).sum(1))
+        output_norm = output / torch.sqrt(torch.pow(output, 2).sum(1))
+        dot = 1 - target_norm.mul(output_norm).sum(1)
+        if self.reduce:
+            return dot.mean()
+        else:
+            return dot.sum()
