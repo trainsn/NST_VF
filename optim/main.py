@@ -22,7 +22,6 @@ def optimize(args):
     # generate the vector field that we want to stylize
     size = args.content_size
     vectors = np.zeros((size, size, 2), dtype=np.float32)
-    angles = np.zeros((size, size), dtype=np.float32)
 
     # vortex_spacing = 0.5
     # extra_factor = 2.
@@ -58,9 +57,8 @@ def optimize(args):
                 vectors[y, x, 1] = xx / rsq
                 # angles[y, x] = math.atan(vectors[y, x, 1] / vectors[y, x, 0]) * 180 / math.pi
             # angles[y, x] = 45
-    angles = utils.tensor_load_vector_field(angles)
-    angles = angles.unsqueeze(0)
-    angles = Variable(angles, requires_grad=False)
+    vectors = utils.tensor_load_vector_field(vectors)
+    vectors = Variable(vectors, requires_grad=False)
 
     # load the pre-trained vgg-16 and extract features
     vgg = Vgg16()
@@ -76,18 +74,22 @@ def optimize(args):
     transformer = TransformerNet()
     transformer.load_state_dict(torch.load(args.transformer_model_path))
     if args.cuda:
-        angles = angles.cuda()
+        vectors = vectors.cuda()
         transformer.cuda()
 
     # init optimizer
-    angles_size = angles.data.size()
-    output_size = np.asarray(angles_size)
+    vectors_size = vectors.data.size()
+    output_size = np.asarray(vectors_size)
     output_size[1] = 3
     output_size = torch.Size(output_size)
     output = Variable(torch.randn(output_size, device="cuda"), requires_grad=True)
     optimizer = Adam([output], lr=args.lr)
     mse_loss = torch.nn.MSELoss()
-    l1_loss = torch.nn.L1Loss()
+    cosine_loss = torch.nn.CosineEmbeddingLoss()
+    label = torch.ones(1, 1, args.content_size, args.content_size)
+    if args.cuda:
+        label = label.cuda()
+
     # optimize the images
     tbar = trange(args.iters)
     for e in tbar:
@@ -95,7 +97,7 @@ def optimize(args):
         optimizer.zero_grad()
         transformer_input = utils.gray_bgr_batch(output)
         transformer_y = transformer(transformer_input)
-        content_loss = args.content_weight * l1_loss(angles, transformer_y)
+        content_loss = args.content_weight * cosine_loss(vectors, transformer_y, label)
 
         vgg_input = output
         features_y = vgg(vgg_input)

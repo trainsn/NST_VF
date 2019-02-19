@@ -58,6 +58,13 @@ def line_integral_convolution(
         raise ValueError("Vectors must have two components (not %d)" % t)
     result = np.zeros((h,w),dtype=np.float32)
 
+    eps = 1e-7
+    for i in range(h):
+        for j in range(w):
+            if vectors[i ,j, 0] == 0:
+                vectors[i ,j, 0] = eps
+            if vectors[i ,j, 1] == 0:
+                vectors[i ,j, 1] = eps
     for i in range(h):
         for j in range(w):
             x = j
@@ -67,25 +74,26 @@ def line_integral_convolution(
             
             k = kernellen//2
             #print i, j, k, x, y
-            result[i,j] += kernel[k]*texture[x,y]
+            result[i,j] += kernel[k]*texture[y,x]
             while k<kernellen-1:
                 _advance(vectors[y,x,0],vectors[y,x,1],
                         &x, &y, &fx, &fy, w, h)
                 k+=1
-                #print i, j, k, x, y
-                result[i,j] += kernel[k]*texture[x,y]
+                #print i, j, k, x, y, fx, fy
+                result[i,j] += kernel[k]*texture[y,x]
 
             x = j
             y = i
             fx = 0.5
             fy = 0.5
-            
+
+            k = kernellen//2
             while k>0:
                 _advance(-vectors[y,x,0],-vectors[y,x,1],
                         &x, &y, &fx, &fy, w, h)
                 k-=1
-                #print i, j, k, x, y
-                result[i,j] += kernel[k]*texture[x,y]
-                    
+                #print i, j, k, x, y, fx, fy
+                result[i,j] += kernel[k]*texture[y,x]
+
     return result
 

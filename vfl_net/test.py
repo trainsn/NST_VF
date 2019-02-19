@@ -19,13 +19,6 @@ import lic_internal
 
 def lic(vectors, output_name):
     rsize, csize, _ = vectors.shape
-    eps = 1e-7
-    for x in range(rsize):
-        for y in range(csize):
-            if vectors[x, y, 0] == 0:
-                vectors[x, y, 0] = eps
-            if vectors[x, y, 1] == 0:
-                vectors[x, y, 1] = eps
 
     kernellen=20
     kernel = np.sin(np.arange(kernellen)*np.pi/kernellen)
@@ -49,17 +42,17 @@ def vectorize(args):
     content_image = utils.subtract_imagenet_mean_batch(content_image)
     content_image = content_image.to(device)
 
-    with torch.no_grad():
-        vectorize_model = TransformerNet()
-        state_dict = torch.load(args.saved_model)
-        # remove saved deprecated running_* keys in InstanceNorm from the checkpoint
-        for k in list(state_dict.keys()):
-            if re.search(r'in\d+\.running_(mean|var)$', k):
-                pdb.set_trace()
-                del state_dict[k]
-        vectorize_model.load_state_dict(state_dict)
-        vectorize_model.to(device)
-        output = vectorize_model(content_image)
+    # with torch.no_grad():
+    #     vectorize_model = TransformerNet()
+    #     state_dict = torch.load(args.saved_model)
+    #     # remove saved deprecated running_* keys in InstanceNorm from the checkpoint
+    #     for k in list(state_dict.keys()):
+    #         if re.search(r'in\d+\.running_(mean|var)$', k):
+    #             pdb.set_trace()
+    #             del state_dict[k]
+    #     vectorize_model.load_state_dict(state_dict)
+    #     vectorize_model.to(device)
+    #     output = vectorize_model(content_image)
 
     target = dataset.hdf5_loader(args.target_vector)
     target_transform = transforms.ToTensor()
@@ -69,14 +62,14 @@ def vectorize(args):
     # mse_loss = torch.nn.MSELoss()
     cosine_loss = CosineLoss()
     # loss = mse_loss(output, target)
-    loss = cosine_loss(output, target)
-    print(loss.item())
+    # loss = cosine_loss(output, target)
+    # print(loss.item())
 
     pdb.set_trace()
-    output = output.cpu().clone().clamp(-90, 90).numpy()[0]
-    lic(output, "output.jpg")
-    # target = target.cpu().clone().clamp(-90, 90).numpy()[0]
-    # lic(target, "target.jpg")
+    # output = output.cpu().clone().clamp(-90, 90).numpy()[0]
+    # lic(output, "output.jpg")
+    target = target.cpu().clone().numpy()[0].transpose(1, 2, 0)
+    lic(target, "target.jpg")
 
 def main():
     parser = argparse.ArgumentParser()
@@ -84,7 +77,7 @@ def main():
                         help="path to the original image")
     parser.add_argument("--size", type=int, default=512,
                         help="size the the image and vector field")
-    parser.add_argument("--target-vector", type=str, default="../datasets/fake/vector_fields/vectorline.h5",
+    parser.add_argument("--target-vector", type=str, default="../datasets/vector_fields/COCO_train2014_000000035427.h5",
                         help="path to the target vector field")
     parser.add_argument("--saved-model", type=str, default="../save_models/epoch_5.model",
                         help="saved model to be used for vectorize the image. ")

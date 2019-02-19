@@ -25,6 +25,7 @@ def tensor_load_rgbimage(filename, size=None, scale=None, keep_asp=False):
     return img
 
 def tensor_load_vector_field(angles):
+    angles = angles.transpose(2, 0, 1)
     angles = angles[np.newaxis, :, :]
     angles = torch.from_numpy(angles).float()
     return angles

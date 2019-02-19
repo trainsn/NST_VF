@@ -40,7 +40,6 @@ class VFDataset(Dataset):
         vf_fn = fn[:fn.rfind('.')] + '.h5'
         img = self.loader(os.path.join(inputDir, fn))
         vector_field = self.target_loader(os.path.join(vfDir, vf_fn))
-        vector_field = vector_field[:, :, np.newaxis]
 
         if self.transform is not None:
             img = self.transform(img)
