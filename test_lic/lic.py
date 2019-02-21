@@ -1,5 +1,6 @@
 import torch
 from torch.autograd import Variable
+import pdb
 
 def _advance(vx, vy, x, y, fx, fy, w, h):
     if vx>=0:
@@ -41,7 +42,7 @@ def line_integral_convolution(vectors, texture, kernel, cuda):
     w = vectors.shape[1]
     kernellen = kernel.shape[0]
 
-    sline = torch.zeros(h, w)
+    sline = torch.zeros(kernellen, h, w)
     if cuda:
         sline = sline.cuda()
 
@@ -53,13 +54,13 @@ def line_integral_convolution(vectors, texture, kernel, cuda):
             fy = 0.5
 
             k = kernellen // 2
-            sline[i, j] += texture[y, x].item() * kernel[k]
+            sline[k, i, j] = texture[y, x]
             while k < kernellen - 1:
                 x, y, fx, fy = _advance(vectors[y, x, 0], vectors[y, x, 1],
                                         x, y, fx, fy, w, h)
                 # print(i, j, k, y, x)
                 k += 1
-                sline[i, j] += texture[y, x].item() * kernel[k]
+                sline[k, i, j] = texture[y, x]
 
             x = j
             y = i
@@ -72,10 +73,10 @@ def line_integral_convolution(vectors, texture, kernel, cuda):
                                         x, y, fx, fy, w, h)
                 k -= 1
                 # print(i, j, k, y, x)
-                sline[i, j] += texture[y, x].item() * kernel[k]
-            sline[i, j] /= float(kernel.sum())
+                sline[k, i, j] = texture[y, x]
 
-    loss = torch.sum(torch.pow((sline - texture), 2))
+    means = torch.mean(sline, 0)
+    loss = torch.sum(torch.pow((sline - means), 2))
     return loss
 
 

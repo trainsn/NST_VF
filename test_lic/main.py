@@ -16,18 +16,26 @@ def optimize(args):
     # generate the vector field that we want to stylize
     size = args.content_size
     vectors = np.zeros((size, size, 2), dtype=np.float32)
+    vectors_norm = np.zeros((size, size, 2), dtype=np.float32)
     eps = 1e-7
     for y in range(size):
         for x in range(size):
-            xx = float(x - size/2)
-            yy = float(y - size/2)
-            rsq = xx**2+yy**2
-            if (rsq == 0):
-                vectors[y, x, 0] = -1
-                vectors[y, x, 1] = 1
-            else:
-                vectors[y, x, 0] = -yy/rsq if yy!=0 else eps
-                vectors[y, x, 1] = xx/rsq  if xx!=0 else eps
+            # xx = float(x - size/2)
+            # yy = float(y - size/2)
+            # rsq = xx**2+yy**2
+            # if (rsq == 0):
+            #     vectors[y, x, 0] = -1
+            #     vectors[y, x, 1] = 1
+            # else:
+            #     vectors[y, x, 0] = -yy/rsq if yy!=0 else eps
+            #     vectors[y, x, 1] = xx/rsq  if xx!=0 else eps
+            vectors[y, x, 0] = -1
+            vectors[y, x, 1] = 1
+
+    for y in range(size):
+        for x in range(size):
+            vectors_norm[y, x, 0] = -vectors[y, x, 1]
+            vectors_norm[y, x, 1] = vectors[y, x, 0]
 
     output_size = torch.Size([size, size])
     if args.cuda:
@@ -40,12 +48,19 @@ def optimize(args):
     for e in tbar:
         utils.clamp_batch(output, 0, 255)
         optimizer.zero_grad()
-        kernellen = 15
+        kernellen = 5
         kernel = np.sin(np.arange(kernellen) * np.pi / kernellen)
         kernel = kernel.astype(np.float32)
 
-        loss = lic.line_integral_convolution(vectors, output, kernel, args.cuda)
+        loss = 0
+        loss += lic.line_integral_convolution(vectors, output, kernel, args.cuda)
+
+        kernellen = 3
+        kernel = np.sin(np.arange(kernellen) * np.pi / kernellen)
+        kernel = kernel.astype(np.float32)
+        loss -= args.across_ratio * lic.line_integral_convolution(vectors_norm, output, kernel, args.cuda)
         loss.backward()
+
         optimizer.step()
         tbar.set_description(str(loss.data.cpu().numpy().item()))
 
@@ -67,6 +82,8 @@ def main():
                         help="learning rate, default is 0.001")
     parser.add_argument("--log-interval", type=int, default=2,
                         help="number of images after which the training loss is logged, default is 50")
+    parser.add_argument("--across-ratio", type=float, default=1,
+                        help="the ratio between cross loss and direction loss")
 
     args = parser.parse_args()
     optimize(args)
