@@ -8,6 +8,22 @@ from torch.autograd import Variable
 from torch.utils.serialization import load_lua
 
 from net import Vgg16
+def tensor_load_grayimage(filename, size=None, scale=None, keep_asp=False):
+    img = Image.open(filename).convert('L')
+    if size is not None:
+        if keep_asp:
+            size2 = int(size * 1.0 / img.size[0] * img.size[1])
+            img = img.resize((size, size2), Image.ANTIALIAS)
+        else:
+            img = img.resize((size, size), Image.ANTIALIAS)
+
+    elif scale is not None:
+        img = img.resize((int(img.size[0] / scale), int(img.size[1] / scale)), Image.ANTIALIAS)
+
+    img = np.array(img)
+    img = img[np.newaxis, :, :]
+    img = torch.from_numpy(img).float()
+    return img
 
 def tensor_load_rgbimage(filename, size=None, scale=None, keep_asp=False):
     img = Image.open(filename).convert('RGB')
@@ -58,6 +74,13 @@ def subtract_imagenet_mean_batch(batch):
     mean[:, 0, :, :] = 103.939
     mean[:, 1, :, :] = 116.779
     mean[:, 2, :, :] = 123.680
+    return batch - Variable(mean)
+
+def subtract_imagenet_mean_batch_gray(batch):
+    """Subtract ImageNt mean pixel-wise from a gray image"""
+    tensortype = type(batch.data)
+    mean = tensortype(batch.data.size())
+    mean[:, :, :, :] = 0.114*103.939 + 0.587*116.779 + 0.299*123.680
     return batch - Variable(mean)
 
 def add_imagenet_mean_batch_device(batch, cuda):

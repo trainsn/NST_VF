@@ -16,14 +16,18 @@ from transformer_net import TransformerNet
 
 
 def optimize(args):
+    content_image = utils.tensor_load_grayimage(args.content_image, size=args.content_size)
+    content_image = content_image.unsqueeze(0)
+    content_image = Variable(content_image, requires_grad=False)
+    content_image = utils.subtract_imagenet_mean_batch_gray(content_image)
     style_image = utils.tensor_load_rgbimage(args.style_image, size=args.style_size)
     style_image = style_image.unsqueeze(0)
     style_image = Variable(utils.preprocess_batch(style_image), requires_grad=False)
     style_image = utils.subtract_imagenet_mean_batch(style_image)
 
     # generate the vector field that we want to stylize
-    size = args.content_size
-    vectors = np.zeros((size, size, 2), dtype=np.float32)
+    # size = args.content_size
+    # vectors = np.zeros((size, size, 2), dtype=np.float32)
 
     # vortex_spacing = 0.5
     # extra_factor = 2.
@@ -57,11 +61,11 @@ def optimize(args):
     #         else:
     #             vectors[y, x, 0] = -yy / rsq
     #             vectors[y, x, 1] = xx / rsq
-    f = h5py.File("../datasets/fake/vector_fields/cat_test3.h5", 'r')
-    a_group_key = list(f.keys())[0]
-    vectors = f[a_group_key][:]
-    vectors = utils.tensor_load_vector_field(vectors)
-    vectors = Variable(vectors, requires_grad=False)
+    # f = h5py.File("../datasets/fake/vector_fields/cat_test3.h5", 'r')
+    # a_group_key = list(f.keys())[0]
+    # vectors = f[a_group_key][:]
+    # vectors = utils.tensor_load_vector_field(vectors)
+    # vectors = Variable(vectors, requires_grad=False)
 
     # load the pre-trained vgg-16 and extract features
     vgg = Vgg16()
@@ -77,8 +81,11 @@ def optimize(args):
     transformer = TransformerNet()
     transformer.load_state_dict(torch.load(args.transformer_model_path))
     if args.cuda:
-        vectors = vectors.cuda()
+        # vectors = vectors.cuda()
+        content_image = content_image.cuda()
         transformer.cuda()
+    vectors = transformer(content_image)
+    vectors = Variable(vectors.data, requires_grad=False)
 
     # init optimizer
     vectors_size = vectors.data.size()
@@ -102,21 +109,21 @@ def optimize(args):
         transformer_y = transformer(transformer_input)
         content_loss = args.content_weight * cosine_loss(vectors, transformer_y, label)
 
-        # vgg_input = output
-        # features_y = vgg(vgg_input)
-        # style_loss = 0
-        # for m in range(len(features_y)):
-        #     gram_y = utils.gram_matrix(features_y[m])
-        #     gram_s = Variable(gram_style[m].data, requires_grad=False)
-        #     style_loss += args.style_weight * mse_loss(gram_y, gram_s)
+        vgg_input = output
+        features_y = vgg(vgg_input)
+        style_loss = 0
+        for m in range(len(features_y)):
+            gram_y = utils.gram_matrix(features_y[m])
+            gram_s = Variable(gram_style[m].data, requires_grad=False)
+            style_loss += args.style_weight * mse_loss(gram_y, gram_s)
 
-        # total_loss = content_loss + style_loss
-        total_loss = content_loss
+        total_loss = content_loss + style_loss
+        # total_loss = content_loss
         total_loss.backward()
         optimizer.step()
         tbar.set_description(str(total_loss.data.cpu().numpy().item()))
-        # if ((e+1) % args.log_interval == 0):
-        #     print("iter: %d content_loss: %f style_loss %f" % (e, content_loss.item(), style_loss.item()))
+        if ((e+1) % args.log_interval == 0):
+            print("iter: %d content_loss: %f style_loss %f" % (e, content_loss.item(), style_loss.item()))
 
     # save the image
     output = utils.add_imagenet_mean_batch_device(output, args.cuda)
@@ -126,7 +133,9 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--iters", type=int, default=500,
                         help="number of training iterations, default is 500")
-    parser.add_argument("--style-image", type=str, default="style_images/22.jpg",
+    parser.add_argument("--content-image", type=str, default="../datasets/fake/train_gray/streamline.jpg",
+                        help="path to content image")
+    parser.add_argument("--style-image", type=str, default="style_images/starry_night.jpg",
                         help="path to style-image")
     parser.add_argument("--content-size", type=int, default=512,
                         help="size of the vector field. default is 512")
