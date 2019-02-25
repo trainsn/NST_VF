@@ -41,8 +41,12 @@ def line_integral_convolution(vectors, texture, kernel, cuda):
     h = vectors.shape[0]
     w = vectors.shape[1]
     kernellen = kernel.shape[0]
+    c = len(list(texture.shape))
 
-    sline = Variable(torch.zeros(kernellen, h, w), requires_grad=True)
+    if c == 3:
+        sline = Variable(torch.zeros(kernellen, h, w, texture.shape[0]), requires_grad=True)
+    else:
+        sline = Variable(torch.zeros(kernellen, h, w), requires_grad=True)
     if cuda:
         sline = sline.cuda()
 
@@ -54,13 +58,19 @@ def line_integral_convolution(vectors, texture, kernel, cuda):
             fy = 0.5
 
             k = kernellen // 2
-            sline[k, i, j] = texture[y, x]
+            if c == 3:
+                sline[k, i, j] = texture[:, y, x]
+            else:
+                sline[k, i, j] = texture[y, x]
             while k < kernellen - 1:
                 x, y, fx, fy = _advance(vectors[y, x, 0], vectors[y, x, 1],
                                         x, y, fx, fy, w, h)
                 # print(i, j, k, y, x)
                 k += 1
-                sline[k, i, j] = texture[y, x]
+                if c == 3:
+                    sline[k, i, j] = texture[:, y, x]
+                else:
+                    sline[k, i, j] = texture[y, x]
 
             x = j
             y = i
@@ -73,7 +83,10 @@ def line_integral_convolution(vectors, texture, kernel, cuda):
                                         x, y, fx, fy, w, h)
                 k -= 1
                 # print(i, j, k, y, x)
-                sline[k, i, j] = texture[y, x]
+                if c == 3:
+                    sline[k, i, j] = texture[:, y, x]
+                else:
+                    sline[k, i, j] = texture[y, x]
 
     means = torch.mean(sline, 0)
     loss = torch.sum(torch.pow((sline - means), 2))
