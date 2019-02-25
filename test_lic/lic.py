@@ -42,7 +42,7 @@ def line_integral_convolution(vectors, texture, kernel, cuda):
     w = vectors.shape[1]
     kernellen = kernel.shape[0]
 
-    sline = torch.zeros(kernellen, h, w)
+    sline = Variable(torch.zeros(kernellen, h, w), requires_grad=True)
     if cuda:
         sline = sline.cuda()
 

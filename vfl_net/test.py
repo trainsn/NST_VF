@@ -67,18 +67,18 @@ def vectorize(args):
     pdb.set_trace()
     output = output.cpu().clone().numpy()[0].transpose(1, 2, 0)
     lic(output, "output.jpg")
-    target = target.cpu().clone().numpy()[0].transpose(1, 2, 0)
-    lic(target, "target.jpg")
+    # target = target.cpu().clone().numpy()[0].transpose(1, 2, 0)
+    # lic(target, "target.jpg")
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--content-image", type=str, default="../datasets/train_gray/COCO_train2014_000000035427.jpg",
+    parser.add_argument("--content-image", type=str, default="../datasets/fake/train_gray/streamline1.jpg",
                         help="path to the original image")
     parser.add_argument("--size", type=int, default=512,
                         help="size the the image and vector field")
     parser.add_argument("--target-vector", type=str, default="../datasets/vector_fields/COCO_train2014_000000035427.h5",
                         help="path to the target vector field")
-    parser.add_argument("--saved-model", type=str, default="../save_models/epoch_5.model",
+    parser.add_argument("--saved-model", type=str, default="../save_models/ckpt_epoch_0_batch_id_400.pth",
                         help="saved model to be used for vectorize the image. ")
     parser.add_argument("--cuda", type=int, default=1,
                         help="set it to 1 for running on GPU, 0 for CPU")

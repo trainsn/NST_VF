@@ -3,6 +3,7 @@ import numpy as np
 from tqdm import tqdm, trange
 import os
 import pdb
+import gc
 
 import torch
 from torch.optim import Adam
@@ -20,17 +21,17 @@ def optimize(args):
     eps = 1e-7
     for y in range(size):
         for x in range(size):
-            # xx = float(x - size/2)
-            # yy = float(y - size/2)
-            # rsq = xx**2+yy**2
-            # if (rsq == 0):
-            #     vectors[y, x, 0] = -1
-            #     vectors[y, x, 1] = 1
-            # else:
-            #     vectors[y, x, 0] = -yy/rsq if yy!=0 else eps
-            #     vectors[y, x, 1] = xx/rsq  if xx!=0 else eps
-            vectors[y, x, 0] = -1
-            vectors[y, x, 1] = 1
+            xx = float(x - size/2)
+            yy = float(y - size/2)
+            rsq = xx**2+yy**2
+            if (rsq == 0):
+                vectors[y, x, 0] = -1
+                vectors[y, x, 1] = 1
+            else:
+                vectors[y, x, 0] = -yy/rsq if yy!=0 else eps
+                vectors[y, x, 1] = xx/rsq  if xx!=0 else eps
+            # vectors[y, x, 0] = -1
+            # vectors[y, x, 1] = 1
 
     for y in range(size):
         for x in range(size):
@@ -39,30 +40,30 @@ def optimize(args):
 
     output_size = torch.Size([size, size])
     if args.cuda:
-        output = Variable(torch.randn(output_size, device="cuda")*30 + 127, requires_grad=True)
+        output = Variable(torch.randn(output_size, device="cuda")* 80 + 127, requires_grad=True)
     else:
-        output = Variable(torch.randn(output_size) * 30 + 127, requires_grad=True)
+        output = Variable(torch.randn(output_size) * 80 + 127, requires_grad=True)
     optimizer = Adam([output], lr=args.lr)
 
+    loss = []
     tbar = trange(args.iters)
     for e in tbar:
         utils.clamp_batch(output, 0, 255)
         optimizer.zero_grad()
-        kernellen = 5
+        kernellen = 15
         kernel = np.sin(np.arange(kernellen) * np.pi / kernellen)
         kernel = kernel.astype(np.float32)
 
-        loss = 0
-        loss += lic.line_integral_convolution(vectors, output, kernel, args.cuda)
+        loss.append(lic.line_integral_convolution(vectors, output, kernel, args.cuda))
 
-        kernellen = 3
-        kernel = np.sin(np.arange(kernellen) * np.pi / kernellen)
-        kernel = kernel.astype(np.float32)
-        loss -= args.across_ratio * lic.line_integral_convolution(vectors_norm, output, kernel, args.cuda)
-        loss.backward()
+        # kernellen = 3
+        # kernel = np.sin(np.arange(kernellen) * np.pi / kernellen)
+        # kernel = kernel.astype(np.float32)
+        # loss[e] -= args.across_ratio * lic.line_integral_convolution(vectors_norm, output, kernel, args.cuda)
+        loss[e].backward()
 
         optimizer.step()
-        tbar.set_description(str(loss.data.cpu().numpy().item()))
+        tbar.set_description(str(loss[0].data.cpu().numpy().item()))
 
         # save the image
         if ((e+1) % args.log_interval == 0):
@@ -72,7 +73,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--iters", type=int, default=500,
                     help="number of training iterations, default is 500")
-    parser.add_argument("--content-size", type=int, default=64,
+    parser.add_argument("--content-size", type=int, default=128,
                         help="size of the vector field. default is 512")
     parser.add_argument("--output-image", type=str, default="output.jpg",
                         help="path for saving the output image")

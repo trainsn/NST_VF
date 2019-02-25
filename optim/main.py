@@ -131,7 +131,7 @@ def optimize(args):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--iters", type=int, default=500,
+    parser.add_argument("--iters", type=int, default=100,
                         help="number of training iterations, default is 500")
     parser.add_argument("--content-image", type=str, default="../datasets/fake/train_gray/streamline.jpg",
                         help="path to content image")
