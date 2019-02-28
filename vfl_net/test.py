@@ -28,8 +28,28 @@ def lic(vectors, output_name):
     image = lic_internal.line_integral_convolution(vectors, texture, kernel)
     scipy.misc.imsave(output_name, image)
 
+def NormalizVectrs(vectr):
+    vectr = vectr.transpose(2, 0, 1)
+    vectr = vectr / np.sqrt(np.square(vectr).sum(0))
+    vectr = vectr.transpose(1, 2, 0)
+    return vectr
 
 def vectorize(args):
+    size = args.size
+    vectors = np.zeros((size, size, 2), dtype=np.float32)
+    for y in range(size):
+        for x in range(size):
+            xx = float(x - size / 2)
+            yy = float(y - size / 2)
+            rsq = xx ** 2 + yy ** 2
+            if (rsq == 0):
+                vectors[y, x, 0] = 1
+                vectors[y, x, 1] = 1
+            else:
+                vectors[y, x, 0] = -yy / rsq
+                vectors[y, x, 1] = xx / rsq
+    vectors = NormalizVectrs(vectors)
+
     device = torch.device("cuda" if args.cuda else "cpu")
 
     content_image = Image.open(args.content_image).convert('L')
@@ -54,7 +74,8 @@ def vectorize(args):
         vectorize_model.to(device)
         output = vectorize_model(content_image)
 
-    target = dataset.hdf5_loader(args.target_vector)
+    # target = dataset.hdf5_loader(args.target_vector)
+    target = vectors
     target_transform = transforms.ToTensor()
     target = target_transform(target)
     target = target.unsqueeze(0).to(device)
@@ -64,15 +85,20 @@ def vectorize(args):
     loss = cosine_loss(output, target, label)
     print(loss.item())
 
-    pdb.set_trace()
     output = output.cpu().clone().numpy()[0].transpose(1, 2, 0)
+    output = NormalizVectrs(output)
     lic(output, "output.jpg")
-    # target = target.cpu().clone().numpy()[0].transpose(1, 2, 0)
-    # lic(target, "target.jpg")
+
+    target = target.cpu().clone().numpy()[0].transpose(1, 2, 0)
+    lic(target, "target.jpg")
+
+    dist = np.zeros((size, size))
+    dist = vectors[:, :, 0] * output[:, :, 0] +  vectors[:, :, 1] * output[:, :, 1]
+    pdb.set_trace()
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--content-image", type=str, default="../datasets/fake/train_gray/streamline1.jpg",
+    parser.add_argument("--content-image", type=str, default="../datasets/fake/train_gray/circle.jpg",
                         help="path to the original image")
     parser.add_argument("--size", type=int, default=512,
                         help="size the the image and vector field")

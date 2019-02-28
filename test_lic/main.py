@@ -47,14 +47,14 @@ def optimize(args):
     features_style = vgg(style_image)
     gram_style = [utils.gram_matrix(y) for y in features_style]
 
-    output_size = torch.Size([1, size, size])
-    output = torch.randn(output_size) + 0
-    if args.cuda:
-        output = output.cuda()
-    output = output.expand(3, size, size)
-    output = Variable(output, requires_grad=True)
-    # output_size = torch.Size([3, size, size])
-    # output = Variable(torch.randn(output_size, device="cuda") * 80 + 127, requires_grad=True)
+    # output_size = torch.Size([1, size, size])
+    # output = torch.randn(output_size) * 80 + 127
+    # if args.cuda:
+    #     output = output.cuda()
+    # output = output.expand(3, size, size)
+    # output = Variable(output, requires_grad=True)
+    output_size = torch.Size([3, size, size])
+    output = Variable(torch.randn(output_size, device="cuda") * 80 + 127, requires_grad=True)
     optimizer = Adam([output], lr=args.lr)
     mse_loss = torch.nn.MSELoss()
 
@@ -71,23 +71,23 @@ def optimize(args):
         loss.append(args.content_weight *
                     lic.line_integral_convolution(vectors, lic_input, kernel, args.cuda))
 
-        vgg_input = output.unsqueeze(0)
-        features_y = vgg(vgg_input)
-        style_loss = 0
-        for m in range(len(features_y)):
-            gram_y = utils.gram_matrix(features_y[m])
-            gram_s = Variable(gram_style[m].data, requires_grad=False)
-            style_loss += args.style_weight * mse_loss(gram_y, gram_s)
-        style_loss.backward()
-        loss[e] += style_loss
+        # vgg_input = output.unsqueeze(0)
+        # features_y = vgg(vgg_input)
+        # style_loss = 0
+        # for m in range(len(features_y)):
+        #     gram_y = utils.gram_matrix(features_y[m])
+        #     gram_s = Variable(gram_style[m].data, requires_grad=False)
+        #     style_loss += args.style_weight * mse_loss(gram_y, gram_s)
+        # style_loss.backward()
+        # loss[e] += style_loss
 
         loss[e].backward()
         optimizer.step()
-        tbar.set_description(str(style_loss.data.cpu().numpy().item()))
+        tbar.set_description(str(loss[e].data.cpu().numpy().item()))
 
         # save the image
         if ((e+1) % args.log_interval == 0):
-            print("iter: %d content_loss: %f style_loss %f" % (e, loss[e].item(), style_loss.item()))
+            # print("iter: %d content_loss: %f style_loss %f" % (e, loss[e].item(), style_loss.item()))
             utils.tensor_save_bgrimage(output.data, "output_iter_" + str(e+1) + ".jpg", args.cuda)
 
 def main():

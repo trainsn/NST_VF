@@ -127,13 +127,13 @@ def optimize(args):
 
     # save the image
     output = utils.add_imagenet_mean_batch_device(output, args.cuda)
-    utils.tensor_save_bgrimage(output.data[0], "output_iter_" + str(e + 1) + ".jpg", args.cuda)
+    utils.tensor_save_bgrimage(output.data[0], args.output_image, args.cuda)
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--iters", type=int, default=100,
+    parser.add_argument("--iters", type=int, default=500,
                         help="number of training iterations, default is 500")
-    parser.add_argument("--content-image", type=str, default="../datasets/fake/train_gray/streamline.jpg",
+    parser.add_argument("--content-image", type=str, default="content_images/wind5.jpg",
                         help="path to content image")
     parser.add_argument("--style-image", type=str, default="style_images/starry_night.jpg",
                         help="path to style-image")
