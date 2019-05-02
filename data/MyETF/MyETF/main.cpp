@@ -56,7 +56,7 @@ int main(int argc, char *argv[]) {
 		cv::imwrite(arrow_file, dis);
 		
 		int ETF_kernel = 5;
-		int times = 10;
+		int times = 3;
 		for (int i = 0; i < times; i++) {
 			lic_file = licDir + name_sub + "_" + to_string(i + 1) + ".jpg";
 			arrow_file = arrowDir + name_sub + "_" + to_string(i + 1) + ".jpg";

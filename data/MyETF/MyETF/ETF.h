@@ -15,6 +15,7 @@ public:
 	void Init(cv::Size);
 	void initial_ETF(string, cv::Size);
 	void refine_ETF(int kernel);
+	void propagate();
 	void rotateFlow(cv::Mat& src, cv::Mat& dst, float theta);
 	void getAngle();
 	void getVector();

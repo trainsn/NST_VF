@@ -81,54 +81,6 @@ void ETF::initial_ETF(string file, Size s) {
 		cout << endl;
 	}
 
-	Mat refined_grad_x = grad_x.clone();
-	Mat refined_grad_y = grad_y.clone();
-	Mat refined_gradientMag = gradientMag.clone();
-#pragma omp parallel for
-	for (int y = 0; y < src.rows; y++) {
-		for (int x = 0; x < src.cols; x++) {
-			Vec3f v = gradientMag.at<Vec3f>(y, x);
-	
-			if (v.val[0] == 0) {
-				vector<vector<bool> > visited(src.rows, vector<bool>(src.cols, false));
-				queue<Point2f> q1;
-				q1.push(Point2f(y, x));
-				visited[y][x] = true;
-				float min_dist = 1000000;
-				int miny = -1, minx = -1;
-				while (!q1.empty()) {
-					Point2f cur = q1.front();
-					q1.pop();
-					for (int k = 0; k < 4; k++) {
-						int ny = cur.x + dy[k];
-						int nx = cur.y + dx[k];
-						if (ny < 0 || ny >= refinedETF.rows ||  nx < 0 || nx >= refinedETF.cols)
-							continue;
-							
-						Vec3f nv = gradientMag.at<Vec3f>(ny, nx);
-						if (!visited[ny][nx]) {
-							if (norm(Point2f(y, x) - Point2f(ny, nx)) < min_dist) {
-								if (nv.val[0]) {
-									min_dist = norm(Point2f(y, x) - Point2f(ny, nx));
-									miny = ny;
-									minx = nx;
-								}
-								q1.push(Point2f(ny, nx));
-								visited[ny][nx] = true;	
-							}
-						}
-					}	
-				}
-				refined_grad_x.at<Vec3f>(y, x) = grad_x.at<Vec3f>(miny, minx);
-				refined_grad_y.at<Vec3f>(y, x) = grad_y.at<Vec3f>(miny, minx);
-				refined_gradientMag.at<Vec3f>(y, x) = gradientMag.at<Vec3f>(miny, minx);
-			}
-		}
-	}
-	grad_x = refined_grad_x.clone();
-	grad_y = refined_grad_y.clone();
-	gradientMag = refined_gradientMag.clone();
-
 	flowField = Mat::zeros(src.size(), CV_32FC3);
 
 #pragma omp parallel for
@@ -154,6 +106,52 @@ void ETF::refine_ETF(int kernel) {
 	}
 
 	flowField = refinedETF.clone();
+}
+
+void ETF::propagate() {
+	Mat refined_gradientMag = gradientMag.clone();
+#pragma omp parallel for
+	for (int y = 0; y < flowField.rows; y++) {
+		for (int x = 0; x < flowField.cols; x++) {
+			Vec3f v = gradientMag.at<Vec3f>(y, x);
+	
+			if (v.val[0] == 0) {
+				vector<vector<bool> > visited(flowField.rows, vector<bool>(flowField.cols, false));
+				queue<Point2f> q1;
+				q1.push(Point2f(y, x));
+				visited[y][x] = true;
+				float min_dist = 100000;
+				int miny = -1, minx = -1;
+				while (!q1.empty()) {
+					Point2f cur = q1.front();
+					q1.pop();
+					for (int k = 0; k < 4; k++) {
+						int ny = cur.x + dy[k];
+						int nx = cur.y + dx[k];
+						if (ny < 0 || ny >= refinedETF.rows ||  nx < 0 || nx >= refinedETF.cols)
+							continue;
+							
+						Vec3f nv = gradientMag.at<Vec3f>(ny, nx);
+						if (!visited[ny][nx]) {
+							if (norm(Point2f(y, x) - Point2f(ny, nx)) < min_dist) {
+								if (nv.val[0]) {
+									min_dist = norm(Point2f(y, x) - Point2f(ny, nx));
+									miny = ny;
+									minx = nx;
+								}
+								q1.push(Point2f(ny, nx));
+								visited[ny][nx] = true;	
+							}
+						}
+					}	
+				}
+				refinedETF.at<Vec3f>(y, x) = flowField.at<Vec3f>(miny, minx);
+				refined_gradientMag.at<Vec3f>(y, x) = gradientMag.at<Vec3f>(miny, minx);
+			}
+		}
+	}
+	flowField = refinedETF.clone();
+	gradientMag = refined_gradientMag.clone();
 }
 
 // add by trainsn
