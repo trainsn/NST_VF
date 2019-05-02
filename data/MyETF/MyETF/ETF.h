@@ -1,7 +1,9 @@
 #pragma once
 #include <stdio.h>
+#include <iostream>
 #include <opencv2/opencv.hpp>
 #include <cmath>
+#include <queue>
 
 using namespace std;
 const int img_size = 512;
@@ -22,6 +24,8 @@ public:
 	cv::Mat refinedETF;  // ETF after refinement 
 	float angles[img_size][img_size];
 	float vectors[img_size][img_size][2];
+	const int dx[4] = { -1, 0, 1, 0 };
+	const int dy[4] = { 0, -1, 0, 1 };
 
 private:
 	void resizeMat(cv::Size);

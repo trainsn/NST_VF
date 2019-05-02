@@ -74,8 +74,7 @@ def vectorize(args):
         vectorize_model.to(device)
         output = vectorize_model(content_image)
 
-    # target = dataset.hdf5_loader(args.target_vector)
-    target = vectors
+    target = dataset.hdf5_loader(args.target_vector)
     target_transform = transforms.ToTensor()
     target = target_transform(target)
     target = target.unsqueeze(0).to(device)
@@ -94,7 +93,6 @@ def vectorize(args):
 
     dist = np.zeros((size, size))
     dist = vectors[:, :, 0] * output[:, :, 0] +  vectors[:, :, 1] * output[:, :, 1]
-    pdb.set_trace()
 
 def main():
     parser = argparse.ArgumentParser()

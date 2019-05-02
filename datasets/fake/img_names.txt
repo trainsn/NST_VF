@@ -1,3 +1,1 @@
-cat_test1.jpg
-cat_test2.jpg
-cat_test3.jpg
+6132.jpg
