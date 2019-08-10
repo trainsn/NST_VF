@@ -34,15 +34,6 @@ void ETF::initial_ETF(string file, Size s) {
 	Mat src_n;
 	Mat grad;
 	normalize(src, src_n, 0.0, 1.0, NORM_MINMAX, CV_32FC1);
-
-	freopen("src.csv", "w", stdout);
-	for (int i = 0; i < src.rows; i++) {
-		for (int j = 0; j < src.cols; j++) {
-			Vec3f p = src_n.at<Vec3f>(i, j);
-			cout << p.val[0] << ","; 
-		}
-		cout << endl;
-	}
 	// GaussianBlur(src_n, src_n, Size(101, 101), 0, 0);
 
 	// Generate grad_x and grad_y
@@ -50,36 +41,9 @@ void ETF::initial_ETF(string file, Size s) {
 	Sobel(src_n, grad_x, CV_32FC1, 1, 0, 5);
 	Sobel(src_n, grad_y, CV_32FC1, 0, 1, 5);
 
-	freopen("grad_x.csv", "w", stdout);
-	for (int i = 0; i < src.rows; i++) {
-		for (int j = 0; j < src.cols; j++) {
-			Vec3f u = grad_x.at<Vec3f>(i, j);
-			cout << u.val[0] << ",";
-		}
-		cout << endl;
-	}
-
-	freopen("grad_y.csv", "w", stdout);
-	for (int i = 0; i < src.rows; i++) {
-		for (int j = 0; j < src.cols; j++) {
-			Vec3f v = grad_y.at<Vec3f>(i, j);
-			cout << v.val[0] << ",";
-		}
-		cout << endl;
-	}
-
 	//Compute gradient
 	magnitude(grad_x, grad_y, gradientMag);
 	normalize(gradientMag, gradientMag, 0.0, 1.0, NORM_MINMAX);
-
-	freopen("gradientMag.csv", "w", stdout);
-	for (int i = 0; i < src.rows; i++) {
-		for (int j = 0; j < src.cols; j++) {
-			Vec3f v = gradientMag.at<Vec3f>(i, j);
-			cout << v.val[0] << ",";
-		}
-		cout << endl;
-	}
 
 	flowField = Mat::zeros(src.size(), CV_32FC3);
 

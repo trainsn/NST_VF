@@ -69,7 +69,7 @@ def optimize(args):
 
     # load the pre-trained vgg-16 and extract features
     vgg = Vgg16()
-    utils.init_vgg16(args.vgg_model_dir)
+    # utils.init_vgg16(args.vgg_model_dir)
     vgg.load_state_dict(torch.load(os.path.join(args.vgg_model_dir, 'vgg16.weight')))
     if args.cuda:
         style_image = style_image.cuda()
@@ -78,13 +78,13 @@ def optimize(args):
     gram_style = [utils.gram_matrix(y) for y in features_style]
 
     # load the transformer net and extract features
-    transformer = TransformerNet()
-    transformer.load_state_dict(torch.load(args.transformer_model_path))
+    transformer_phi1 = TransformerNet()
+    transformer_phi1.load_state_dict(torch.load(args.transformer_model_phi1_path))
     if args.cuda:
         # vectors = vectors.cuda()
         content_image = content_image.cuda()
-        transformer.cuda()
-    vectors = transformer(content_image)
+        transformer_phi1.cuda()
+    vectors = transformer_phi1(content_image)
     vectors = Variable(vectors.data, requires_grad=False)
 
     # init optimizer
@@ -101,12 +101,16 @@ def optimize(args):
         label = label.cuda()
 
     # optimize the images
+    transformer_phi2 = TransformerNet()
+    transformer_phi2.load_state_dict(torch.load(args.transformer_model_phi2_path))
+    if args.cuda:
+        transformer_phi2.cuda()
     tbar = trange(args.iters)
     for e in tbar:
         utils.imagenet_clamp_batch(output, 0, 255)
         optimizer.zero_grad()
         transformer_input = utils.gray_bgr_batch(output)
-        transformer_y = transformer(transformer_input)
+        transformer_y = transformer_phi2(transformer_input)
         content_loss = args.content_weight * cosine_loss(vectors, transformer_y, label)
 
         vgg_input = output
@@ -143,8 +147,10 @@ def main():
                         help="size of style image, default is the original size of style image")
     parser.add_argument("--output-image", type=str, default="output.jpg",
                         help="path for saving the output image")
-    parser.add_argument("--transformer-model-path", type=str,default="../save_models/ckpt_epoch_0_batch_id_400.pth",
-                        help="path for transformer net, trained before")
+    parser.add_argument("--transformer-model-phi1-path", type=str, default="../save_models/phi1/epoch_5.model",
+                        help="path for transformer net phi1, trained before")
+    parser.add_argument("--transformer-model-phi2-path", type=str, default="../save_models/phi2/epoch_5.model",
+                        help="path for transformer net phi2, trained before")
     parser.add_argument("--vgg-model-dir", type=str, default="models/",
                         help="directory for vgg, if model is not present in the directory it is downloaded")
     parser.add_argument("--cuda", type=int, default=1,

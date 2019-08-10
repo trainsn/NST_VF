@@ -36,19 +36,19 @@ def NormalizVectrs(vectr):
 
 def vectorize(args):
     size = args.size
-    vectors = np.zeros((size, size, 2), dtype=np.float32)
-    for y in range(size):
-        for x in range(size):
-            xx = float(x - size / 2)
-            yy = float(y - size / 2)
-            rsq = xx ** 2 + yy ** 2
-            if (rsq == 0):
-                vectors[y, x, 0] = 1
-                vectors[y, x, 1] = 1
-            else:
-                vectors[y, x, 0] = -yy / rsq
-                vectors[y, x, 1] = xx / rsq
-    vectors = NormalizVectrs(vectors)
+    # vectors = np.zeros((size, size, 2), dtype=np.float32)
+    # for y in range(size):
+    #     for x in range(size):
+    #         xx = float(x - size / 2)
+    #         yy = float(y - size / 2)
+    #         rsq = xx ** 2 + yy ** 2
+    #         if (rsq == 0):
+    #             vectors[y, x, 0] = 1
+    #             vectors[y, x, 1] = 1
+    #         else:
+    #             vectors[y, x, 0] = -yy / rsq
+    #             vectors[y, x, 1] = xx / rsq
+    # vectors = NormalizVectrs(vectors)
 
     device = torch.device("cuda" if args.cuda else "cpu")
 
@@ -91,18 +91,18 @@ def vectorize(args):
     target = target.cpu().clone().numpy()[0].transpose(1, 2, 0)
     lic(target, "target.jpg")
 
-    dist = np.zeros((size, size))
-    dist = vectors[:, :, 0] * output[:, :, 0] +  vectors[:, :, 1] * output[:, :, 1]
+    # dist = np.zeros((size, size))
+    # dist = vectors[:, :, 0] * output[:, :, 0] + vectors[:, :, 1] * output[:, :, 1]
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--content-image", type=str, default="../datasets/fake/train_gray/circle.jpg",
+    parser.add_argument("--content-image", type=str, default="../datasets/train_gray/COCO_train2014_000000000064.jpg",
                         help="path to the original image")
     parser.add_argument("--size", type=int, default=512,
                         help="size the the image and vector field")
-    parser.add_argument("--target-vector", type=str, default="../datasets/vector_fields/COCO_train2014_000000035427.h5",
+    parser.add_argument("--target-vector", type=str, default="../datasets/vector_fields/phi1/COCO_train2014_000000000064.h5",
                         help="path to the target vector field")
-    parser.add_argument("--saved-model", type=str, default="../save_models/ckpt_epoch_0_batch_id_400.pth",
+    parser.add_argument("--saved-model", type=str, default="../save_models/phi1/epoch_5.model",
                         help="saved model to be used for vectorize the image. ")
     parser.add_argument("--cuda", type=int, default=1,
                         help="set it to 1 for running on GPU, 0 for CPU")
