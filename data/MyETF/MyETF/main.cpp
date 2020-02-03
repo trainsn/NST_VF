@@ -51,8 +51,8 @@ int main(int argc, char *argv[]) {
 				etf.propagate();
 			}
 		}
-		//etf.getAngle();
-		etf.getVector();
+		etf.getAngle();
+		//etf.getVector();
 
 		hid_t       hdf5_file, space, dset;          /* Handles */
 		herr_t      status;

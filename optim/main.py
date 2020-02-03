@@ -88,15 +88,16 @@ def optimize(args):
     vectors = Variable(vectors.data, requires_grad=False)
 
     # init optimizer
-    vectors_size = vectors.data.size()
-    output_size = np.asarray(vectors_size)
+    content_image_size = content_image.data.size()
+    output_size = np.asarray(content_image_size)
     output_size[1] = 3
     output_size = torch.Size(output_size)
     output = Variable(torch.randn(output_size, device="cuda"), requires_grad=True)
     optimizer = Adam([output], lr=args.lr)
     mse_loss = torch.nn.MSELoss()
     cosine_loss = torch.nn.CosineEmbeddingLoss()
-    label = torch.ones(1, 1, args.content_size, args.content_size)
+    # label = torch.ones(1, 1, args.content_size, args.content_size)
+    label = torch.ones(1, 128, 128, 128)
     if args.cuda:
         label = label.cuda()
 
@@ -112,6 +113,7 @@ def optimize(args):
         transformer_input = utils.gray_bgr_batch(output)
         transformer_y = transformer_phi2(transformer_input)
         content_loss = args.content_weight * cosine_loss(vectors, transformer_y, label)
+        # content_loss = args.content_weight * mse_loss(vectors, transformer_y)
 
         vgg_input = output
         features_y = vgg(vgg_input)
@@ -147,15 +149,15 @@ def main():
                         help="size of style image, default is the original size of style image")
     parser.add_argument("--output-image", type=str, default="output.jpg",
                         help="path for saving the output image")
-    parser.add_argument("--transformer-model-phi1-path", type=str, default="../save_models/phi1/epoch_5.model",
+    parser.add_argument("--transformer-model-phi1-path", type=str, default="../save_models/DownUpNet/phi2_cosine/epoch_5.model",
                         help="path for transformer net phi1, trained before")
-    parser.add_argument("--transformer-model-phi2-path", type=str, default="../save_models/phi2/epoch_5.model",
+    parser.add_argument("--transformer-model-phi2-path", type=str, default="../save_models/DownUpNet/phi2_cosine/epoch_5.model",
                         help="path for transformer net phi2, trained before")
     parser.add_argument("--vgg-model-dir", type=str, default="models/",
                         help="directory for vgg, if model is not present in the directory it is downloaded")
     parser.add_argument("--cuda", type=int, default=1,
                         help="set it to 1 for running on GPU, 0 for CPU")
-    parser.add_argument("--content-weight", type=float, default=1e6,
+    parser.add_argument("--content-weight", type=float, default=1e5,
                         help="weight for content-loss, default is 3.0")
     parser.add_argument("--style-weight", type=float, default=5,
                         help="weight for style-loss, default is 5.0")

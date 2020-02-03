@@ -34,7 +34,7 @@ class VFDataset(Dataset):
 
     def __getitem__(self, index):
         inputDir = os.path.join(self.root, "train_gray")
-        vfDir = os.path.join(self.root, "vector_fields")
+        vfDir = os.path.join(self.root, "vector_fields", "phi2")
 
         fn = self.imgs[index].strip("\r\n")
         vf_fn = fn[:fn.rfind('.')] + '.h5'

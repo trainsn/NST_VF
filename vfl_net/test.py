@@ -100,9 +100,9 @@ def main():
                         help="path to the original image")
     parser.add_argument("--size", type=int, default=512,
                         help="size the the image and vector field")
-    parser.add_argument("--target-vector", type=str, default="../datasets/vector_fields/phi1/COCO_train2014_000000000064.h5",
+    parser.add_argument("--target-vector", type=str, default="../datasets/vector_fields/phi2/COCO_train2014_000000000064.h5",
                         help="path to the target vector field")
-    parser.add_argument("--saved-model", type=str, default="../save_models/phi1/epoch_5.model",
+    parser.add_argument("--saved-model", type=str, default="../save_models/ckpt_epoch_3_batch_id_2200.pth",
                         help="saved model to be used for vectorize the image. ")
     parser.add_argument("--cuda", type=int, default=1,
                         help="set it to 1 for running on GPU, 0 for CPU")
